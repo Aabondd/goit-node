@@ -1,31 +1,30 @@
 const {
-    listContacts,
-    getContactById,
-    removeContact,
-    addContact,
-  } = require('./contacts');
+  listContacts,
+  getContactById,
+  removeContact,
+  addContact,
+} = require('./contacts');
 
-  const yargs = require("yargs");
-
-  const argv = require('yargs').argv;
+const yargs = require('yargs');
+const argv = require('yargs').argv;
 
 // TODO: рефакторить
 function invokeAction({ action, id, name, email, phone }) {
   switch (action) {
     case 'list':
-       console.log(listContacts()); 
+      listContacts();
       break;
 
     case 'get':
-       console.log(getContactById(id)); 
+      getContactById(id);
       break;
 
     case 'add':
-        console.log(addContact(name, email, phone));
+      addContact(name, email, phone);
       break;
 
     case 'remove':
-       console.log(removeContact(id));
+      removeContact(id);
       break;
 
     default:
