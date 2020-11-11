@@ -25,8 +25,7 @@ class ContactController {
     const userId = parseInt(contactId);
 
     const contactById = getContactById(userId);
-    console.log('Looooook ', contactById);
-
+    
     if (contactById === undefined) {
       return res.status(404).json({ message: 'Not found' });
     }
