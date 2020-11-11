@@ -1,35 +1,61 @@
-const {
-  listContacts,
-  getContactById,
-  removeContact,
-  addContact,
-} = require('./contacts');
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const morgan = require('morgan');
+const dotenv = require('dotenv');
 
-const yargs = require('yargs');
-const argv = require('yargs').argv;
+const router = require('./routers/contact.router');
 
-// TODO: рефакторить
-function invokeAction({ action, id, name, email, phone }) {
-  switch (action) {
-    case 'list':
-      listContacts();
-      break;
+require('dotenv').config();
 
-    case 'get':
-      getContactById(id);
-      break;
+class Server {
+  constructor() {
+    this.server = null;
+  }
 
-    case 'add':
-      addContact(name, email, phone);
-      break;
+  async start() {
+    this.initServer();
+    this.initMiddlewares();
+    this.initRoutes();
+    await this.initDatabase();
+    return this.startListening();
+  }
 
-    case 'remove':
-      removeContact(id);
-      break;
+  initServer() {
+    this.server = express();
+  }
 
-    default:
-      console.warn('\x1B[31m Unknown action type!');
+  initMiddlewares() {
+    this.server.use(cors());
+    this.server.use(express.json());
+    this.server.use(morgan('dev'));
+  }
+
+  initRoutes() {
+    this.server.use('/contacts', router);
+  }
+
+  async initDatabase() {
+    try {
+      await mongoose.connect(process.env.MONGODB_URL, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      });
+      return console.log('Database connection successful');
+    } catch (err) {
+      console.log('Databse connection Error:', err);
+      process.exit(1);
+    }
+  }
+
+  startListening() {
+    const PORT = process.env.PORT;
+
+    return this.server.listen(PORT, () => {
+      console.log('Server listening on port:', PORT);
+    });
   }
 }
 
-invokeAction(argv);
+const server = new Server();
+server.start();
