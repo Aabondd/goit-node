@@ -5,117 +5,132 @@ const { stringify } = require('querystring');
 const contactsPath = path.join(__dirname, '../db/contacts.json');
 const NotFoundError = require('../errors/NotFoundError');
 
-// TODO: задокументировать каждую функцию
 function listContacts() {
-  const fullListOfContacts = fs.readFileSync(contactsPath, 'utf-8');
-  const parsedContacts = JSON.parse(fullListOfContacts);
-  return console.table(parsedContacts);
+  fs.readFile(contactsPath, 'utf-8', (error, data) => {
+    if (error) {
+      return console.log(error);
+    }
+
+    const contacts = JSON.parse(data);
+    console.table(contacts);
+    return contacts;
+  });
 }
 
 function getContactById(contactId) {
-  const contacts = fs.readFileSync(contactsPath, 'utf-8');
-  const parsedContacts = JSON.parse(contacts);
-  const contactById = parsedContacts.find(
-    contact => Number(contact.id) === Number(contactId),
-  );
+  fs.readFile(contactsPath, 'utf-8', (error, data) => {
+    if (error) {
+      return console.log(error);
+    }
 
-  if (!contactById) {
-    // throw new NotFoundError();
-    return 'User is not found';
-  }
+    const contacts = JSON.parse(data);
 
-  console.table(contactById);
-  return contactById;
+    const contact = contacts.find(contact => {
+      if (contact.id === contactId) {
+        console.log(`Get contact by ID ${contactId}:`);
+        console.table(contact);
+        return contact;
+      }
+    });
+
+    if (contact == null) {
+      console.log('User is not found');
+    }
+  });
 }
 
-function removeContact(contactId, res) {
-  const contacts = fs.readFileSync(contactsPath, 'utf-8');
-  const parsedContacts = JSON.parse(contacts);
-  const contactById = parsedContacts.find(
-    contact => Number(contact.id) === Number(contactId),
-  );
+function removeContact(contactId) {
+  fs.readFile(contactsPath, 'utf-8', (error, data) => {
+    if (error) {
+      return console.log(error);
+    }
 
-  if (!contactById) {
-    return res.status(404).json({ message: 'Not found' });
-  }
+    const contacts = JSON.parse(data);
+    const newContact = contacts.filter(contact => contact.id !== contactId);
 
-  const updatedContactList = parsedContacts.filter(
-    contact => contact.id !== contactId,
-  );
+    if (newContact.length === contacts.length) {
+      console.log(
+        `Contact with ID "${contactId}" don't removed! ID "${contactId}" not found!`,
+      );
+      return;
+    }
 
-  fs.writeFileSync(
-    contactsPath,
-    JSON.stringify(updatedContactList, null, 2),
-    err => {
-      if (err) throw err;
-      console.log('Finished writing');
-      console.log(`Contact with id: ${contactId} was deleted`);
-    },
-  );
+    console.log('Contact deleted successfully! New list of contacts: ');
+    console.table(newContact);
 
-  const updatedContacts = fs.readFileSync(contactsPath, 'utf-8');
-  console.table(JSON.parse(updatedContacts));
-  return updatedContacts;
-}
-
-function updateContact(req, res, contactId) {
-  const contacts = fs.readFileSync(contactsPath, 'utf-8');
-  const parsedContacts = JSON.parse(contacts);
-  const contactById = parsedContacts.find(
-    contact => Number(contact.id) === Number(contactId),
-  );
-
-  if (!contactById) {
-    return res.status(404).json({ message: 'Not found' });
-  }
-
-  const targetContactIndex = parsedContacts.findIndex(
-    contact => contact.id === contactId,
-  );
-  if (targetContactIndex === -1) {
-    throw new NotFoundError('User not found');
-  }
-
-  const updatedContact = {
-    ...parsedContacts[targetContactIndex],
-    ...req.body,
-  };
-  parsedContacts[targetContactIndex] = updatedContact;
-
-  fs.writeFileSync(
-    contactsPath,
-    JSON.stringify(parsedContacts, null, 2),
-    err => {
-      if (err) throw err;
-      console.log('Finished writing');
-      console.log(`Contact with id: ${contactId} was deleted`);
-    },
-  );
-
-  const updatedContacts = fs.readFileSync(contactsPath, 'utf-8');
-  console.table(JSON.parse(updatedContacts));
-
-  return updatedContact;
+    fs.writeFile(contactsPath, JSON.stringify(newContact, null, 2), error => {
+      if (error) {
+        return console.log('error :', error);
+      }
+    });
+  });
 }
 
 function addContact(name, email, phone) {
-  const contacts = fs.readFileSync(contactsPath, 'utf-8');
-  const parsedContacts = JSON.parse(contacts);
-  const newContact = { id: parsedContacts.length + 1, name, email, phone };
-  parsedContacts.push(newContact);
+  fs.readFile(contactsPath, 'utf-8', (error, data) => {
+    if (error) {
+      return console.log(error);
+    }
 
-  fs.writeFileSync(
-    contactsPath,
-    JSON.stringify(parsedContacts, null, 2),
-    err => {
-      if (err) throw err;
-      console.log('There is an error');
-      console.log('New user add to the contact list', newContact);
-    },
-  );
+    const contacts = JSON.parse(data);
 
-  console.table(parsedContacts);
-  return newContact;
+    contacts.push({
+      id: contacts.length + 1,
+      name: name,
+      email: email,
+      phone: phone,
+    });
+
+    console.log('Contacts added successfully! New lists of contacts: ');
+    console.table(contacts);
+
+    fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2), error => {
+      if (error) {
+        return console.log(error);
+      }
+    });
+  });
+}
+
+function updateContact(req, res, contactId) {
+  fs.readFile(contactsPath, 'utf-8', (error, data) => {
+    if (error) {
+      return console.log(error);
+    }
+
+    const contacts = JSON.parse(data);
+
+    const contact = contacts.find(contact => {
+      if (contact.id === contactId) {
+        console.log(`Get contact by ID ${contactId}:`);
+        console.table(contact);
+        return contact;
+      }
+    });
+
+    if (contact == null) {
+      console.log(`Contact with ID "${contactId}" not found!`);
+    }
+
+    const targetContactIndex = contacts.findIndex(
+      contact => contact.id === contactId,
+    );
+    if (targetContactIndex === -1) {
+      throw new NotFoundError('User not found');
+    }
+    const updatedContact = {
+      ...contacts[targetContactIndex],
+      ...req.body,
+    };
+
+    contacts[targetContactIndex] = updatedContact;
+
+    fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2), error => {
+      if (error) {
+        return console.log(error);
+      }
+    });
+  });
 }
 
 module.exports = {
