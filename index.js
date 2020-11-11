@@ -1,36 +1,58 @@
 const express = require('express');
-const morgan = require('morgan');
+const mongoose = require('mongoose');
 const cors = require('cors');
-const contactRouter = require('./routers/contact.router');
-require('dotenv').config();
+const morgan = require('morgan');
+const dotenv = require('dotenv');
 
-const PORT = process.env.PORT || 8080;
+const router = require('./routers/contact.router');
+
+require('dotenv').config();
 
 class Server {
   constructor() {
     this.server = null;
   }
 
-  start() {
-    this.server = express();
-    this.initMiddleware();
-    this.initRouters();
-    this.listen();
+  async start() {
+    this.initServer();
+    this.initMiddlewares();
+    this.initRoutes();
+    await this.initDatabase();
+    return this.startListening();
   }
 
-  initMiddleware() {
+  initServer() {
+    this.server = express();
+  }
+
+  initMiddlewares() {
     this.server.use(cors());
     this.server.use(express.json());
     this.server.use(morgan('dev'));
   }
 
-  initRouters() {
-    this.server.use('/contacts', contactRouter);
+  initRoutes() {
+    this.server.use('/contacts', router);
   }
 
-  listen() {
-    this.server.listen(PORT, () => {
-      console.log('Server is listening on port', PORT);
+  async initDatabase() {
+    try {
+      await mongoose.connect(process.env.MONGODB_URL, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      });
+      return console.log('Database connection successful');
+    } catch (err) {
+      console.log('Databse connection Error:', err);
+      process.exit(1);
+    }
+  }
+
+  startListening() {
+    const PORT = process.env.PORT;
+
+    return this.server.listen(PORT, () => {
+      console.log('Server listening on port:', PORT);
     });
   }
 }

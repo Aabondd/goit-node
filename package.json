@@ -1,32 +1,27 @@
 {
-  "name": "goit-node",
+  "name": "03-hw-mongodb",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js",
-    "dev": "nodemon index.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Aabondd/goit-node.git"
+    "dev": "nodemon index.js",
+    "start": "node index.js"
   },
   "keywords": [],
-  "author": "Alexander Bondarenko <aabondd@gmail.com>",
+  "author": "Alexander Bondarenko",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Aabondd/goit-node/issues"
-  },
-  "homepage": "https://github.com/Aabondd/goit-node#readme",
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
-    "joi": "^17.3.0",
-    "morgan": "^1.10.0"
+    "joi": "^14.3.1",
+    "joi-objectid": "^3.0.1",
+    "mongodb": "^3.5.5",
+    "mongoose": "^5.9.7"
   },
   "devDependencies": {
+    "morgan": "^1.10.0",
     "nodemon": "^2.0.6"
   }
 }
