@@ -1,5 +1,5 @@
 {
-  "name": "03-hw-mongodb",
+  "name": "4-auth",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -12,11 +12,14 @@
   "author": "Alexander Bondarenko",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "joi": "^14.3.1",
     "joi-objectid": "^3.0.1",
+    "jsonwebtoken": "^8.5.1",
+    "lodash": "^4.17.20",
     "mongodb": "^3.5.5",
     "mongoose": "^5.9.7"
   },
