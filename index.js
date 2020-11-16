@@ -5,6 +5,7 @@ const morgan = require('morgan');
 const dotenv = require('dotenv');
 
 const router = require('./routers/contact.router');
+const userRouter = require('./routers/user.router');
 
 require('dotenv').config();
 
@@ -33,6 +34,7 @@ class Server {
 
   initRoutes() {
     this.server.use('/contacts', router);
+    this.server.use('/auth', userRouter);
   }
 
   async initDatabase() {
