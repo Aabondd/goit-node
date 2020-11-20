@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
+const path = require('path');
 
 const router = require('./routers/contact.router');
 const userRouter = require('./routers/user.router');
@@ -30,6 +31,7 @@ class Server {
     this.server.use(cors());
     this.server.use(express.json());
     this.server.use(morgan('dev'));
+    this.server.use(express.static(path.resolve(__dirname, 'public')));
   }
 
   initRoutes() {
