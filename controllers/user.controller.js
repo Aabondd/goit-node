@@ -2,6 +2,7 @@ const Joi = require('joi');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const _ = require('lodash');
+const fs = require('fs');
 
 Joi.objectId = require('joi-objectid')(Joi);
 const {
@@ -11,6 +12,13 @@ const {
   UnauthorizedError,
   NotFoundError,
 } = require('../errors/errors.constructors');
+const { generateAvatar } = require('../service/avatarGenerator');
+const { imageMinimizer } = require('../service/imageMinimizer');
+const {
+  createFullPathDraft,
+  createFullPathToMinifiedImg,
+  createPathDestination,
+} = require('../service/avatarConfig');
 
 const userModel = require('../models/user.model');
 
@@ -48,7 +56,28 @@ class UserController {
         password: passwordHash,
       });
 
-      return res.status(201).json({
+      //
+      const generatedAvatar = await generateAvatar(user._id);
+      await imageMinimizer(user._id);
+
+      await fs.unlink(
+        createFullPathDraft(user._id, generatedAvatar.format),
+        function (err) {
+          if (err) throw err;
+        },
+      );
+
+      await userModel.findByIdAndUpdate(
+        user._id,
+        {
+          avatarURL: createFullPathToMinifiedImg(
+            user._id,
+            generatedAvatar.format,
+          ),
+        },
+        { new: true },
+      );
+      res.status(201).json({
         user: {
           email: user.email,
           subscription: user.subscription,
@@ -137,6 +166,50 @@ class UserController {
     }
   }
 
+  avatarUploader() {
+    const storage = multer.diskStorage({
+      destination: function (req, file, cb) {
+        cb(null, createPathDestination());
+      },
+
+      filename: function (req, file, cb) {
+        const fileType = file.mimetype.split('/')[1];
+        if (fileType !== 'png' && fileType !== 'jpeg' && fileType !== 'jpg') {
+          return cb(new Error('File must be a picture'));
+        }
+        cb(null, `${req.userId}.png`);
+      },
+    });
+
+    return multer({ storage: storage }).single('avatar');
+  }
+
+  async updateAvatar(req, res, next) {
+    try {
+      const file = req.file;
+      const { userId } = req;
+
+      const foundUserByID = await userModel.findById(userId);
+
+      if (!foundUserByID.token) {
+        return res.status(401).json({ message: 'Not authorized' });
+      }
+
+      const avatarURL = createPathToAvatar(file.filename);
+
+      await userModel.findByIdAndUpdate(
+        userId,
+        { avatarURL: avatarURL },
+        { new: true },
+      );
+
+      res.send({ avatarURL: avatarURL });
+    } catch (err) {
+      next({ message: err });
+    }
+  }
+
+ 
   validateUserEmailAndPassword(req, res, next) {
     const signInRules = Joi.object({
       email: Joi.string().required(),
