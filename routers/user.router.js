@@ -9,6 +9,8 @@ userRouter.post(
   userController.register,
 );
 
+userRouter.get('/verify/:verificationToken', userController.verifyEmail);
+
 userRouter.put(
   '/login',
   userController.validateUserEmailAndPassword,
