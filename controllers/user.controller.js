@@ -3,6 +3,9 @@ const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const _ = require('lodash');
 const fs = require('fs');
+const uuid = require('uuid');
+const sgMail = require('@sendgrid/mail');
+const dotenv = require('dotenv');
 
 Joi.objectId = require('joi-objectid')(Joi);
 const {
@@ -20,11 +23,14 @@ const {
   createPathDestination,
 } = require('../service/avatarConfig');
 
+require('dotenv').config();
+
 const userModel = require('../models/user.model');
 
 class UserController {
   constructor() {
     this._costFactor = 4;
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
   }
 
   get register() {
@@ -56,7 +62,8 @@ class UserController {
         password: passwordHash,
       });
 
-      //
+      await this.sendVerificationEmail(user);
+
       const generatedAvatar = await generateAvatar(user._id);
       await imageMinimizer(user._id);
 
@@ -93,7 +100,7 @@ class UserController {
       const { email, password } = req.body;
 
       const user = await userModel.findUserByEmail(email);
-      if (!user) {
+      if (!user || user.status !== 'Verified') {
         throw new NotFoundError('Email or password is wrong');
       }
 
@@ -209,7 +216,6 @@ class UserController {
     }
   }
 
- 
   validateUserEmailAndPassword(req, res, next) {
     const signInRules = Joi.object({
       email: Joi.string().required(),
@@ -230,6 +236,40 @@ class UserController {
 
       return { email, subscription };
     });
+  }
+
+  async sendVerificationEmail(user) {
+    const userVarificationToken = uuid.v4();
+    await userModel.createVarificationToken(user._id, userVarificationToken);
+
+    const msg = {
+      to: user.email,
+      from: process.env.EMAIL_SENDER,
+      subject: 'Email varification',
+      text: 'Please verify your email by the following link:',
+      html: `<a href="http://localhost:3000/auth/verify/${userVarificationToken}">Click here</a>`,
+    };
+
+    await sgMail.send(msg);
+  }
+
+  async verifyEmail(req, res, next) {
+    try {
+      const { verificationToken } = req.params;
+      const userToVerify = await userModel.findByVerificationToken(
+        verificationToken,
+      );
+
+      if (!userToVerify) {
+        throw new NotFoundError('User not found');
+      }
+
+      await userModel.verifyUser(userToVerify._id);
+
+      return res.status(200).send('Your accout is successfully verified');
+    } catch (err) {
+      next(err);
+    }
   }
 }
 
